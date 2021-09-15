@@ -1,0 +1,139 @@
+/*
+Author: Braeden Ellershaw (Gamma Omega)
+Purpose: Automatically email members if they incur more unexcused absences
+Last Updated 8/21/2021
+
+For help with this email braeden.ellershaw@gmail.com or text 602-618-4163
+*/
+
+function sendAttendanceEmails()//function to send emails when a new absense in incurred
+{
+  //load the attendence sheets
+  var current_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Current Attendance");
+  var prev_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Previous Attendance");
+
+  //get values from sheets indexed by [row][columns] starting from [0][0]
+  var current_sheet_values = current_sheet.getDataRange().getValues()//array of values from current attendance
+  var prev_sheet_values = prev_sheet.getDataRange().getValues()//array of values from previous attendance
+
+  //stuff we need for later
+  var current_sheet_index = 2; //starting index for the rows
+  var this_member = current_sheet_values[current_sheet_index];//row for the member at this index
+
+  while (this_member[1] != "")//loop through each member on the current sheet
+  {
+
+    var matched = false;//flag variable to check if someone's first name and last name are matched
+    var prev_sheet_index = 2;//start index for previous sheet row
+    var this_mem_prev = prev_sheet_values[prev_sheet_index];//row for the member in previous attendance at this index
+
+    var first_name = this_member[1]//member's first name
+    var last_name = this_member[2]//member's last name
+    var active_status = this_member[4]//member's status (LOA/SAS/etc...)
+    var current_absences = this_member[19]//total number of absences a member has on the current sheet
+    var prev_absences = this_mem_prev[19]//total number of absences a member has on the previous sheet
+    
+    while ((this_mem_prev[1] != "") && (matched == false))//loop through each member in the previous sheet
+    {
+      if ((first_name == this_mem_prev[1]) && (last_name == this_mem_prev[2]))//check if the member's first and last names match
+      {
+        matched = true;//if the rows have the same first and last name, flag matched to be true
+        if (current_absences > prev_absences){//check if a member has increased absences
+          console.log("Member incurred absence: " + first_name + " " + last_name);//message to log which member has a new absence
+
+          var mem_email = this_member[3]//member's email address
+          var allowed_allowances;//initiate number of allowed absences, will be set later
+
+          //check the member's active status and set the number of allowed absences accordingly
+          if (active_status == "SAS")//if a member is on SAS give them 6 allowed absences
+          {
+            allowed_allowances = 6;
+
+          }
+          else if ((active_status == "LOA") || (active_status == "Dropped") || (active_status == "AS") || (active_status == "FS"))
+          {//if a member's status would make their allowances irrelevant, ignore them
+            allowed_allowances == 999;
+          }
+          else //if none of those special cases apply, give them 3 absences
+          {
+            allowed_allowances = 3;
+          }
+
+          //find date where most recent absence was incurred
+          var date_index = 18;//index for the column containing the absences for each meeting 
+
+          //backwards iterate through each date until the most recent absence is found
+          while((this_member[date_index] < 0) || (this_member[date_index] == ""))
+          {
+            date_index -= 1;
+          }
+          var formattedDate = Utilities.formatDate(new Date(current_sheet_values[1][date_index]), "GMT", "M/d/y");//formatted date for emailing
+ 
+          //email to send if the allowed number of absences has been exceeded
+          if (current_absences > allowed_allowances )
+          {
+            var subject = "Unexcused Absence Limit Exceeded"; //subject for email
+            var message = "Br. " + last_name + ",\n\n" + "This email is to inform you that you have received your " + current_absences +  "th unexcused absence and chapter will vote on your suspension THIS SUNDAY. I am asking you to come to chapter to avoid being suspended; you will have a chance to speak on your own behalf on why you should not be suspended.\n\nI can also vouch on your behalf, but only if you make it to chapter or communicate with me. I would hate to see you be suspended, so let me know if you have any questions. Don't be afraid to ask!\n\nOur upcoming chapter will be Sunday " +  Utilities.formatDate(new Date(current_sheet_values[1][date_index + 1]), "GMT", "M/d/y") +
+" at 5pm.\n\nIn U... and I...\nCayla Dammann\nArizona State University\nAlpha Kappa Psi - VP of Administration\nsecretary.akpsi.asu@gmail.com\n(941) 928-0474"
+
+            MailApp.sendEmail(mem_email, subject, message);//email member
+          }
+
+          //email to send if the allowed number of absences has been met or not been exceeded
+          if (current_absences <= allowed_allowances)
+          {//if this member has less than allowed absences, email them
+            var subject;
+            var second_message;
+
+            if (current_absences < allowed_allowances)
+            {
+              subject = "Unexcused Absence"; //subject for email
+            } 
+
+            else if (current_absences == allowed_allowances)
+            {
+              subject = "Unexcused Absence Limit Reached";
+            }
+            if (active_status == "SAS")
+            {
+              second_message = " Please refer to the Bylaws and COM to review SAS status descriptions. Note, we allow 6 unexcused absences for SAS members. Please let me know if you have any questions or concerns. ";
+            }
+            else
+            {
+              second_message = " We allow 3 unexcused absences for active members for instances such as this.";
+            }
+            
+            var message = ("Br." + last_name +",\n\n" + 
+            "Unfortunately, you have an unexcused absence for yesterday's chapter meeting on " + formattedDate +
+            "." + second_message + "\n\n" + "Your total unexcused absence count is now at " + current_absences + 
+            ".\n\nIn U... and I...\n\nCayla Dammann\nArizona State University\nAlpha Kappa Psi - VP of Administration\nsecretary.akpsi.     asu@gmail.com\n(941) 928-0474\n");
+
+          MailApp.sendEmail(mem_email, subject, message);
+          }
+        }
+      }
+  
+      prev_sheet_index = prev_sheet_index + 1;//increase index for previous sheet
+      this_mem_prev = prev_sheet_values[prev_sheet_index];//go to next member on the previous sheet
+    }
+    matched = false;//reset flag
+    current_sheet_index = current_sheet_index + 1;//increase index for current sheet
+    this_member = current_sheet_values[current_sheet_index];//go to next member on the current sheet
+  }
+
+  copyCurrentWeek();//copy this week's data into the previous week sheet
+  current_sheet.activate();//activate previous sheet this will make it the sheet that is open by the editor
+}
+
+function copyCurrentWeek()
+{//make a copy of this week's attendence so it can be checked later
+  var full_spreadsheet = SpreadsheetApp.getActiveSpreadsheet()//activate entire spreadsheet
+  var previous_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Previous Attendance");//get previous attendence sheet
+  previous_sheet.activate();//activate previous sheet
+  full_spreadsheet.deleteActiveSheet();//delete previous sheet
+
+  var current_sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Current Attendance");//get current sheet
+  current_sheet.activate();//activate current sheet
+  
+  SpreadsheetApp.getActive().duplicateActiveSheet().setName("Previous Attendance");//copy current sheet into previous sheet
+}
