@@ -1,0 +1,205 @@
+function setup () {
+
+  var query_form = FormApp.openById('18Ca-I7kXYblLYbA65jgxH2kZ6wgn6947jyf5LOZtoxo');
+  var password_request_form = FormApp.openById('1PBO7cBJBEtZJJ20oIB9rc7pj5gKXjTMrDl-1PFsWudM');
+  var password_change_form = FormApp.openById('1EAsBdgowIr_fVMzRG8wBF6mb3rdL5uzfp5nbqTbmv8M');
+  var work_around_form = FormApp.openById('1oNeYrSdnbooSq17fPuvLV7SgocYiudLxuWRAoqoTpKY');
+
+  ScriptApp.newTrigger('queryHandler').forForm(query_form).onFormSubmit().create();
+  ScriptApp.newTrigger('passwordRequestHandler').forForm(password_request_form).onFormSubmit().create();
+  ScriptApp.newTrigger('passwordChangeHandler').forForm(password_change_form).onFormSubmit().create();
+}
+
+function queryHandler(e) {
+  checkCredits();
+  hideSheets();
+}
+
+function passwordRequestHandler(e) {
+  checkPassword();
+  hideSheets();
+}
+
+function passwordChangeHandler(e) {
+  changePassword();
+  hideSheets();
+}
+
+
+function checkCredits() 
+{
+
+  var spread_sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var response_sheet = spread_sheet.getSheetByName("Query Responses");
+  var credits_sheet = spread_sheet.getSheetByName("Credit Tracker");
+  var response_vals = response_sheet.getDataRange().getValues()
+  var members_vals = credits_sheet.getDataRange().getValues()
+  var res_array = response_vals.pop();
+  var res_email = res_array[3];
+  var res_password = res_array[4];
+  var res_last_name = res_array[2];
+
+  for (i = (members_vals.length-1); i > 0; i--){
+    var mem_last_name = members_vals[i][1];
+    var mem_password = members_vals[i][3];
+    var mem_email = members_vals[i][2];
+
+    if (mem_email == res_email)
+    {
+
+      if(mem_password == res_password)
+      {
+        var num_service_credits = parseInt(members_vals[i][4]);
+        var num_prof_credits = parseInt(members_vals[i][5]);
+
+        var subject = "Service and Profesionalism Credits"
+        var message = ("Dear Brother " + mem_last_name + ",\n\n" + "You have " + num_service_credits + " approved service credits and " + num_prof_credits + " approved professionalism credits.\nFor questions regarding your service credits please email service.akpsi.asu@gmail.com. For questions regarding your professionalism credits please email 	professionalism.akpsi.asu@gmail.com.");
+        MailApp.sendEmail(res_email, subject, message)
+        Logger.log("email sent");
+        i=-1;
+      }
+      else if (mem_email == res_email)
+      {
+        var subject = "Error Retrieving Credits"
+        var message = ("Dear Brother " + mem_last_name + ",\n\n" + "There was a problem retrieving your credits. The password you submitted with your query was incorrect. You can request your password with this form: (https://docs.google.com/forms/d/e/1FAIpQLSfx4YqWWnKlWJpGlfE6AyW5hmuN45mPVDY5nAXFOuBMd_83Lg/viewform) or email it.akpsi.asu@gmail.com for help.");
+        MailApp.sendEmail(res_email, subject, message)
+        i = -1;
+      }
+    }
+    else if ((i == 1) && (email_matched == false))
+    {
+
+      var subject = "Error Retrieving Credits"
+      var message = ("There was a problem retrieving your credits. The email you submitted with your query (" + res_email + ") was not found. Please contact it.akpsi.asu@gmail.com for help.");
+      MailApp.sendEmail(res_email, subject, message)
+    } 
+  }//end of for loop
+
+}
+
+function checkPassword(){
+  var spread_sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var response_sheet = spread_sheet.getSheetByName("Secret Word Requests");
+  var credits_sheet = spread_sheet.getSheetByName("Credit Tracker");
+  var response_vals = response_sheet.getDataRange().getValues()
+  var members_vals = credits_sheet.getDataRange().getValues()
+  var res_array = response_vals.pop();
+  var res_email = res_array[1];
+
+  for (i = (members_vals.length-1); i > 0; i--){
+
+    var mem_password = members_vals[i][3];
+    var mem_email = members_vals[i][2];
+    var mem_last_name = members_vals[i][1];
+    if (mem_email == res_email)
+    {
+      var subject = "Credit Tracker Password"
+      var message = ("Dear Brother " + mem_last_name + ",\n\n" + "Your credit tracker password is: " + mem_password);
+      MailApp.sendEmail(res_email, subject, message)
+      i = -1;
+    }
+    else if ((i == 1) && (mem_email != res_email))
+    {
+      var subject = "Error Retrieving Password"
+      var message = ("There was a problem retrieving your password. The email you submitted with your request was not found. Please contact it.akpsi.asu@gmail.com for help.");
+      MailApp.sendEmail(res_email, subject, message)
+    } 
+  }//end of for loop
+}
+
+function changePassword(){
+  var spread_sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var response_sheet = spread_sheet.getSheetByName("Secret Word Changes");
+  var credits_sheet = spread_sheet.getSheetByName("Credit Tracker");
+  var response_vals = response_sheet.getDataRange().getValues()
+  var members_vals = credits_sheet.getDataRange().getValues()
+  var res_array = response_vals.pop();
+  var res_email = res_array[1];
+
+  var res_old_password = res_array[2];
+  var res_new_password = res_array[3];
+
+  for (i = (members_vals.length-1); i > 0; i--){
+
+    var mem_last_name = members_vals[i][1];
+    var mem_old_password = members_vals[i][3];
+    var mem_email = members_vals[i][2];
+
+    if (mem_email == res_email)
+    {
+      if(mem_old_password == res_old_password)
+      {
+
+        spread_sheet.getSheetByName("Credit Tracker").getRange((i + 1),4).setValue(res_new_password);
+        var subject = "Credit Tracker Password Change"
+        var message = ("Dear Brother " + mem_last_name + ",\n\n" + "Your password has been changed to: " +  res_new_password);
+        MailApp.sendEmail(res_email, subject, message)
+        Logger.log("email sent");
+        i = -1;
+      }
+      else if (mem_email == res_email)
+      {
+        var subject = "Error Changing Password"
+        var message = ("Dear Brother " + mem_last_name + ",\n\n" + "There was a problem changing your password. The old password you submitted with your request was incorrect. You can request your password with this form: (https://docs.google.com/forms/d/e/1FAIpQLSfx4YqWWnKlWJpGlfE6AyW5hmuN45mPVDY5nAXFOuBMd_83Lg/viewform) or email it.akpsi.asu@gmail.com");
+        MailApp.sendEmail(res_email, subject, message)
+        i = -1;
+      }
+    }
+    else if ((i == 1) && (mem_email != res_email))
+    {
+      var subject = "Error Changing Password"
+      var message = ("There was a problem changing your password. The email you submitted on your form did not match any on the tracker form. Please contact it.akpsi.asu@gmail.com for help.");
+      MailApp.sendEmail(res_email, subject, message)
+    } 
+  }//end of for loop
+
+}
+
+
+function randomPasswordGenerator(){
+  var spread_sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var credits_sheet = spread_sheet.getSheetByName("Credit Tracker");
+  var members_vals = credits_sheet.getDataRange().getValues()
+
+  for (var j = 1; j < members_vals.length; j++)
+  {
+    var password = "";
+    var rand_char = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 4);
+    password = password.concat(rand_char);
+
+    for (i = 0; i < 4; i++){
+      var rand_num = (parseInt(Math.random(9) * 10)).toString();
+      password = password.concat(rand_num);
+    }
+    spread_sheet.getSheetByName("Credit Tracker").getRange((j + 1),4).setValue(password);
+  }
+  hideSheets();
+}
+//48,49,52
+function sendAllPasswords()
+{
+  var spread_sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var credits_sheet = spread_sheet.getSheetByName("Credit Tracker");
+  var members_vals = credits_sheet.getDataRange().getValues()
+
+  for (var i = 1; i < members_vals.length; i++)
+  {
+    var member_last_name = members_vals[i][1];
+    var member_email = members_vals[i][2];
+    var member_password = members_vals[i][3]
+    
+
+    console.log(i);
+    var subject  = "New Credit Tracking System";
+    var message = ("Dear Brother " + member_last_name + ",\n\nThere is now a system to check your approved professionalism and service credits. The link to the form to check your credits is: https://docs.google.com/forms/d/e/1FAIpQLSc9k2aATi8B81dVAlQ24026D27EC5WTiFHMp_swtEz1te0yyQ/viewform\nIn order to access your credits, you will need your email and secret word (Google doesn't let me call it a password), which was randomly generated. After submitting a form, you will receive a response within a few minutes. If you do not receive a response within an hour please let me know.\n\nYour email is: " + member_email +"\nYour secret word is: " + member_password + ".\n\nYou can change your secret word by submitting this form: https://docs.google.com/forms/d/e/1FAIpQLSd8Pz2zB4ZuxLov4df0uhO86Dr0e1KNLft9dc9tewPzCT0tGQ/viewform\nIf you decide to change your password, do not make it one that you use for other services. This password is visible to the Director of Service, the Director of Professionalism, and the Director of IT.\n\nIf you forget your password you can have it sent to this email by filling out this form: https://docs.google.com/forms/d/e/1FAIpQLSfx4YqWWnKlWJpGlfE6AyW5hmuN45mPVDY5nAXFOuBMd_83Lg/viewform \n\nBest,\nBraeden Ellershaw\nDirector of IT"); 
+    //MailApp.sendEmail(member_email, subject, message)
+    console.log(member_last_name);
+  }
+  hideSheets();
+}
+
+function hideSheets(){
+  SpreadsheetApp.getActive().getSheetByName("Secret Word Requests").hideSheet();
+  SpreadsheetApp.getActive().getSheetByName("Query Responses").hideSheet();
+  SpreadsheetApp.getActive().getSheetByName("Secret Word Changes").hideSheet();
+}
