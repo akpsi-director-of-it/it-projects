@@ -1,7 +1,7 @@
 /*
 Author: Braeden Ellershaw (Gamma Omega)
 Purpose: Automatically email members if they incur more unexcused absences
-Last Updated 8/21/2021
+Last Updated 10/4/2021
 
 For help with this email braeden.ellershaw@gmail.com or text 602-618-4163
 */
@@ -31,14 +31,16 @@ function sendAttendanceEmails()//function to send emails when a new absense in i
     var last_name = this_member[2]//member's last name
     var active_status = this_member[4]//member's status (LOA/SAS/etc...)
     var current_absences = this_member[19]//total number of absences a member has on the current sheet
-    var prev_absences = this_mem_prev[19]//total number of absences a member has on the previous sheet
+    //total number of absences a member has on the previous sheet
     
     while ((this_mem_prev[1] != "") && (matched == false))//loop through each member in the previous sheet
     {
       if ((first_name == this_mem_prev[1]) && (last_name == this_mem_prev[2]))//check if the member's first and last names match
       {
+        var prev_absences = this_mem_prev[19]
         matched = true;//if the rows have the same first and last name, flag matched to be true
         if (current_absences > prev_absences){//check if a member has increased absences
+          //console.log("current: " + current_absences + " prev: " + prev_absences + " stuff: " + prev_sheet_values[4][19] );
           console.log("Member incurred absence: " + first_name + " " + last_name);//message to log which member has a new absence
 
           var mem_email = this_member[3]//member's email address
@@ -76,7 +78,7 @@ function sendAttendanceEmails()//function to send emails when a new absense in i
             var message = "Br. " + last_name + ",\n\n" + "This email is to inform you that you have received your " + current_absences +  "th unexcused absence and chapter will vote on your suspension THIS SUNDAY. I am asking you to come to chapter to avoid being suspended; you will have a chance to speak on your own behalf on why you should not be suspended.\n\nI can also vouch on your behalf, but only if you make it to chapter or communicate with me. I would hate to see you be suspended, so let me know if you have any questions. Don't be afraid to ask!\n\nOur upcoming chapter will be Sunday " +  Utilities.formatDate(new Date(current_sheet_values[1][date_index + 1]), "GMT", "M/d/y") +
 " at 5pm.\n\nIn U... and I...\nCayla Dammann\nArizona State University\nAlpha Kappa Psi - VP of Administration\nsecretary.akpsi.asu@gmail.com\n(941) 928-0474"
 
-            MailApp.sendEmail(mem_email, subject, message);//email member
+            //MailApp.sendEmail(mem_email, subject, message);//email member
           }
 
           //email to send if the allowed number of absences has been met or not been exceeded
@@ -106,7 +108,7 @@ function sendAttendanceEmails()//function to send emails when a new absense in i
             var message = ("Br." + last_name +",\n\n" + 
             "Unfortunately, you have an unexcused absence for yesterday's chapter meeting on " + formattedDate +
             "." + second_message + "\n\n" + "Your total unexcused absence count is now at " + current_absences + 
-            ".\n\nIn U... and I...\n\nCayla Dammann\nArizona State University\nAlpha Kappa Psi - VP of Administration\nsecretary.akpsi.     asu@gmail.com\n(941) 928-0474\n");
+            ".\n\nIn U... and I...\n\nCayla Dammann\nArizona State University\nAlpha Kappa Psi - VP of Administration\nsecretary.akpsi.asu@gmail.com\n(941) 928-0474\n");
 
           MailApp.sendEmail(mem_email, subject, message);
           }
